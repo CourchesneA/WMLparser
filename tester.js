@@ -168,6 +168,23 @@ function parseTemplateInvocation(s){
         itext : null,
         targs : null
     }
+
+    //Since we assume not empty and legal syntax, first part will be itext up to PIPE or TEND
+
+    var ans = parseIText(s);
+    rvalue.itext = ans.node;
+    var t = ans.nextToken;      //last token get from the string, Should be TEND or PIPE
+    switch(t.tokenvalue){
+        case TEND:
+            break;
+        case PIPE:
+            rvalue.targs = parseTArgs(s);
+            break;
+    }
+    return rvalue;
+
+
+    /*
     for(var t=removeToken(s,Inset); t.token != TEND; t= removeToken(s,Inset)){
 
         var ans = null;
@@ -199,7 +216,7 @@ function parseTemplateInvocation(s){
                 return rvalue;  //The template invocation is over, return the AST
         }
     }
-    return rvalue;
+    return rvalue;*/
 }
 
 function parseTemplateDef(s){
@@ -210,10 +227,70 @@ function parseTParam(s){
 
 }
 
-function parseIText(s,ftoken){
+function parseIText(s){
+    var Inset = {
+        INNERTEXT : true,
+        PSTART : true,
+        TSTART : true,
+        DSTART : true,
+        PIPE : true,
+        TEND : true
+    }
+
+    if (!s.str){        //Check for end of string
+        return null;
+    }
+    var rvalue = {
+        name : "itext",
+        INNERTEXT : null,
+        templateinvocation : null,
+        templatedef : null,
+        tparam : null,
+        next : null
+    }
+
+    var t = null;
+    t = removeToken(s, Inset);
+
+    switch (t.tokenvalue) {
+
+        case INNERTEXT:             //Set itext INNERTEXT and parse next itext
+            rvalue.INNERTEXT = t.tokenvalue;
+            break;
+
+        //case PSTART:
+
+        case TSTART:
+            rvalue.templateinvocation = parseTemplateInvocation(s);
+            break;
+
+
+        case DSTART:
+            rvalue.templatedef = parseTemplateDef(s);
+            break;
+
+        case PSTART:
+            rvalue.tparam = parseTParam(s);
+            break;
+
+        case PIPE:
+            return {
+                node: null,
+                nextToken: t.token
+            }
+
+        case TEND:
+            return {
+                node: null,
+                nextToken: t.token
+            }
+
+    }
+    var ans = parseIText(s);
+    rvalue.next = ans.node;
 
     return {
-        node: null,
+        node: rvalue,
         nextToken: null     //should be either PIPE or TEND
     }
 }
