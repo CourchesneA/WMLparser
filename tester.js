@@ -9,7 +9,7 @@
 var TSTART = new RegExp("^ *{{");
 var TEND = new RegExp("^ *}}");
 var PIPE = new RegExp("^ *\\|");
-var OUTERTEXT = new RegExp(/.+?(?={{|{:|:})/);         //!TSTART,DSTART, can be PSTART  TODO do not catch PSTART
+var OUTERTEXT = new RegExp(/.+?(?={{|{:|:}|$)/);         //!TSTART,DSTART, can be PSTART  TODO do not catch PSTART
 var INNERTEXT = new RegExp(/.+?(?=\||{{|{:|}})/);    //match everything but TSTART (PSTART is included),DSTART, PIPE, TEND using positive lookahead
 var DSTART = new RegExp("^ *{:");
 var DEND = new RegExp("^ *:}");
@@ -104,9 +104,9 @@ console.log(tester(testset));*/
 function parseOuter(s){
     //The parameter is in fact an object that contains a string so it is passed by reference to modify it within any parse function
     var Outset = {
-        OUTERTEXT : true,
         TSTART : true,
-        DSTART : true
+        DSTART : true,
+        OUTERTEXT : true
     }
 
     if (!s.str){        //Check for end of string
@@ -116,7 +116,7 @@ function parseOuter(s){
     
 
     switch (t.token) {
-        case OUTERTEXT:
+        case "OUTERTEXT":
             return {
                 name: "outer",
                 OUTERTEXT: t.tokenvalue,
@@ -125,7 +125,7 @@ function parseOuter(s){
                 next: parseOuter(s)
             }
 
-        case TSTART:        //Template invocation
+        case "TSTART":        //Template invocation
             return {
                 name: "outer",
                 OUTERTEXT: null,
@@ -134,7 +134,7 @@ function parseOuter(s){
                 next: parseOuter(s)
             }
 
-        case DSTART:        //Definition invocation
+        case "DSTART":        //Definition invocation
             return {
                 name: "outer",
                 OUTERTEXT: null,
@@ -152,12 +152,12 @@ function parseTemplateInvocation(s){
     // return template invocation ADT
     //<templateinvocation> ::= TSTART <itext> <targs> TEND
     var Inset = {
-        INNERTEXT : true,
         PSTART : true,
         TSTART : true,
         DSTART : true,
         PIPE : true,
-        TEND : true
+        TEND : true,
+        INNERTEXT : true,
     }
 
     if (!s.str){        //Check for end of string
@@ -173,11 +173,11 @@ function parseTemplateInvocation(s){
     var ans = parseIText(s);
 
     rvalue.itext = ans.node;
-    var t = ans.nextToken;      //last token get from the string, Should be TEND or PIPE
-    switch(t.tokenvalue){
-        case TEND:
+    //var nextToken = ans.nextToken;      //last token get from the string, Should be TEND or PIPE
+    switch(ans.nextToken){
+        case "TEND":
             break;
-        case PIPE:
+        case "PIPE":
             rvalue.targs = parseTArgs(s);
             break;
     }
@@ -194,12 +194,12 @@ function parseTParam(s){
 
 function parseIText(s){
     var Inset = {
-        INNERTEXT : true,
         PSTART : true,
         TSTART : true,
         DSTART : true,
         PIPE : true,
-        TEND : true
+        TEND : true,
+        INNERTEXT : true
     }
 
     if (!s.str){        //Check for end of string
@@ -217,32 +217,32 @@ function parseIText(s){
     var t = null;
     t = removeToken(s, Inset);
 
-    switch (t.tokenvalue) {
+    switch (t.token) {
 
-        case INNERTEXT:             //Set itext INNERTEXT and parse next itext
+        case "INNERTEXT":             //Set itext INNERTEXT and parse next itext
             rvalue.INNERTEXT = t.tokenvalue;
             break;
 
-        case TSTART:
+        case "TSTART":
             rvalue.templateinvocation = parseTemplateInvocation(s);
             break;
 
 
-        case DSTART:
+        case "DSTART":
             rvalue.templatedef = parseTemplateDef(s);
             break;
 
-        case PSTART:
+        case "PSTART":
             rvalue.tparam = parseTParam(s);
             break;
 
-        case PIPE:
+        case "PIPE":
             return {
                 node: null,
                 nextToken: t.token
             }
 
-        case TEND:
+        case "TEND":
             return {
                 node: null,
                 nextToken: t.token
@@ -251,7 +251,7 @@ function parseIText(s){
     }
     var ans = parseIText(s);    //parse the next itext
     var nextToken = null;
-    if(ans.nextToken == PIPE || ans.nextToken == TEND){
+    if(ans.nextToken == "PIPE" || ans.nextToken == "TEND"){
         nextToken = ans.nextToken
     }
     rvalue.next = ans.node;
@@ -282,9 +282,9 @@ function parseTArgs(s){
     rvalue.itext = ans.node;
     var t = ans.nextToken;      //last token get from the string, Should be TEND or PIPE
     switch(t.tokenvalue){
-        case TEND:
+        case "TEND":
             break;
-        case PIPE:
+        case "PIPE":
             rvalue.next = parseTArgs(s);
             break;
     }
@@ -298,12 +298,14 @@ function removeToken(s, tset){  //take a string and a tokenset
 }
 
 function parse(s){
+    //Define the global string that will be consumed token by token
     var consume = {str: s};
-    parseOuter(consume);
+    return parseOuter(consume);
 }
 
 var teststr = "outer 1 {{invoc {{ invoc2 | param2 }}| param }} outer2";
-parse(teststr);
+var done = parse(teststr);
+console.log(done);
 
 
 
