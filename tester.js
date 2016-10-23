@@ -79,7 +79,8 @@ var testset = {
 
 function tester(testset){
     for (var s in testset){
-        if(s == scanit(s, TOKENSET)){
+        var p = eval(s);
+        if(p == scanit(s, TOKENSET)){
             console.log("true");
         }else{
             console.log("false");
