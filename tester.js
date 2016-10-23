@@ -101,14 +101,19 @@ console.log(tester(testset));*/
 //First, scan tokens
 
 //Those functions use scan and return AST
-/*function parseOuter(s){
+function parseOuter(s){
+    //The parameter is in fact an object that contains a string so it is passed by reference to modify it within any parse function
     var Outset = {
         OUTERTEXT : true,
         TSTART : true,
         DSTART : true
     }
-    var t = scan(str, outset);
-    var substring = s.substr(t.tokenvalue.length)
+
+    if (!s.str){        //Check for end of string
+        return null;
+    }
+    var t = removeToken(s,Outset);
+    
 
     switch (t.token) {
         case OUTERTEXT:
@@ -117,20 +122,26 @@ console.log(tester(testset));*/
                 OUTERTEXT: t.tokenvalue,
                 templateinvocation: null,
                 templatedef: null,
-                next: parseOuter(substring)
+                next: parseOuter(s)
             }
 
         case TSTART:        //Template invocation
             return {
                 name: "outer",
                 OUTERTEXT: null,
-                templateinvocation: parseTemplateInvocation(substring),
+                templateinvocation: parseTemplateInvocation(s),
                 templatedef: null,
-                next:
-
+                next: parseOuter(s)
             }
 
         case DSTART:        //Definition invocation
+            return {
+                name: "outer",
+                OUTERTEXT: null,
+                templateinvocation: null,
+                templatedef: parseTemplateDef(s),
+                next: parseOuter(s)
+            }
     }
 
 }
@@ -138,7 +149,57 @@ console.log(tester(testset));*/
 
 
 function parseTemplateInvocation(s){
+    // return template invocation ADT
+    //<templateinvocation> ::= TSTART <itext> <targs> TEND
+    var Inset = {
+        INNERTEXT : true,
+        PSTART : true,
+        TSTART : true,
+        DSTART : true,
+        PIPE : true,
+        TEND : true
+    }
 
+    if (!s.str){        //Check for end of string
+        return null;
+    }
+    var rvalue = {
+        name : "templateinvocation",
+        itext : null,
+        targs : null
+    }
+    for(var t=removeToken(s,Inset); t.token != TEND; t= removeToken(s,Inset)){
+
+        var ans = null;
+        switch (t.token) {
+            case INNERTEXT: //this is itext
+                ans = parseIText(s, INNERTEXT);    //call the function witht he found first token
+                break;
+
+            case PSTART:    // {{{
+                ans = parseIText(s, PSTART);
+                break;
+
+            case TSTART:    // {{
+                ans = parseIText(s,TSTART);
+                break;
+
+            case DSTART:    // {:
+                ans = parseIText(s,DSTART);
+
+            case PIPE:      // |
+                rvalue.targs = parseTArgs(s);
+        }
+        rvalue.itext = ans.node;
+        switch (ans.nextToken) {
+            case PIPE:                  //Last token was a pipe, parse targs and return the AST
+                rvalue.targs = parseTArgs(s);
+                return rvalue;
+            case TEND:
+                return rvalue;  //The template invocation is over, return the AST
+        }
+    }
+    return rvalue;
 }
 
 function parseTemplateDef(s){
@@ -147,17 +208,31 @@ function parseTemplateDef(s){
 
 function parseTParam(s){
 
-}*/
+}
+
+function parseIText(s,ftoken){
+
+    return {
+        node: null,
+        nextToken: null     //should be either PIPE or TEND
+    }
+}
+function parseTArgs(s){
+
+}
+
+function removeToken(s, tset){  //take a string and a tokenset
+    var t = scan(s.str, tset);
+    s.str = s.str.substr(t.tokenvalue.length);
+    return t;
+}
 
 function parse(s){
-    var reduce = {str:"test"};
-    test("yo");
-    console.log(reduce);
-}
-function test(s){
-    reduce.str = "test2"
+    var reduce = {str: s};
+    parseOuter(reduce);
 }
 
-parse("te");
+
+
 
 
