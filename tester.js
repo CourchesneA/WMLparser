@@ -170,8 +170,8 @@ function parseTemplateInvocation(s){
     }
 
     //Since we assume not empty and legal syntax, first part will be itext up to PIPE or TEND
-
     var ans = parseIText(s);
+
     rvalue.itext = ans.node;
     var t = ans.nextToken;      //last token get from the string, Should be TEND or PIPE
     switch(t.tokenvalue){
@@ -182,41 +182,6 @@ function parseTemplateInvocation(s){
             break;
     }
     return rvalue;
-
-
-    /*
-    for(var t=removeToken(s,Inset); t.token != TEND; t= removeToken(s,Inset)){
-
-        var ans = null;
-        switch (t.token) {
-            case INNERTEXT: //this is itext
-                ans = parseIText(s, INNERTEXT);    //call the function witht he found first token
-                break;
-
-            case PSTART:    // {{{
-                ans = parseIText(s, PSTART);
-                break;
-
-            case TSTART:    // {{
-                ans = parseIText(s,TSTART);
-                break;
-
-            case DSTART:    // {:
-                ans = parseIText(s,DSTART);
-
-            case PIPE:      // |
-                rvalue.targs = parseTArgs(s);
-        }
-        rvalue.itext = ans.node;
-        switch (ans.nextToken) {
-            case PIPE:                  //Last token was a pipe, parse targs and return the AST
-                rvalue.targs = parseTArgs(s);
-                return rvalue;
-            case TEND:
-                return rvalue;  //The template invocation is over, return the AST
-        }
-    }
-    return rvalue;*/
 }
 
 function parseTemplateDef(s){
@@ -258,8 +223,6 @@ function parseIText(s){
             rvalue.INNERTEXT = t.tokenvalue;
             break;
 
-        //case PSTART:
-
         case TSTART:
             rvalue.templateinvocation = parseTemplateInvocation(s);
             break;
@@ -286,16 +249,46 @@ function parseIText(s){
             }
 
     }
-    var ans = parseIText(s);
+    var ans = parseIText(s);    //parse the next itext
+    var nextToken = null;
+    if(ans.nextToken == PIPE || ans.nextToken == TEND){
+        nextToken = ans.nextToken
+    }
     rvalue.next = ans.node;
 
     return {
         node: rvalue,
-        nextToken: null     //should be either PIPE or TEND
+        nextToken: nextToken     //should be either PIPE or TEND
     }
 }
-function parseTArgs(s){
 
+function parseTArgs(s){
+     var TASet = {
+       
+    }
+
+    if (!s.str){        //Check for end of string
+        return null;
+    }
+    var rvalue = {
+        name : "targs",
+        itext : null,
+        next : null
+    }
+
+    //Since we assume not empty and legal syntax, first part will be itext up to PIPE or TEND
+    var ans = parseIText(s);
+    
+    rvalue.itext = ans.node;
+    var t = ans.nextToken;      //last token get from the string, Should be TEND or PIPE
+    switch(t.tokenvalue){
+        case TEND:
+            break;
+        case PIPE:
+            rvalue.next = parseTArgs(s);
+            break;
+    }
+    return rvalue;
 }
 
 function removeToken(s, tset){  //take a string and a tokenset
@@ -305,9 +298,12 @@ function removeToken(s, tset){  //take a string and a tokenset
 }
 
 function parse(s){
-    var reduce = {str: s};
-    parseOuter(reduce);
+    var consume = {str: s};
+    parseOuter(consume);
 }
+
+var teststr = "outer 1 {{invoc {{ invoc2 | param2 }}| param }} outer2";
+parse(teststr);
 
 
 
