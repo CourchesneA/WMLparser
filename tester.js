@@ -460,11 +460,13 @@ function printASTIndent(node, tabVal){
 //var teststr = "outer 1 {{invoc {{ invoc2 | param2 }}| param }} outer2";
 //var teststr = "{:definition|arg1 {{{you}}} :}";
 //>>>>>>> cee6dc78f8c96736655e0d2c876a712a93f6aa69
-var teststr = "outer 1 {{ invoc2 | param2 }} outer 2"
+var teststr = "{{invocation||||||}}"
 var done = parse(teststr);
-console.log(done);
+//console.log(done);
 console.log("Print after this");
-console.log(printAST(done));
+var pstr = printAST(done);
+console.log(pstr);
+console.log(printAST(parse(pstr)));
 //console.log(printASTIndent(done, 4));
 
 
@@ -473,32 +475,30 @@ console.log(printAST(done));
 //-----------------Question 4---------------------
 
 function printAST(a){
-    console.log("test1");
     return printOuter(a);
 }
 
 function printOuter(a){
     var rvalue = "";
-    console.log("test2");
     for (var rule in a) {
-        if (!eval(rule)) {
+        if (!a[rule]) {
             continue;       //property is null, next property
         }
         switch (rule) {
-            case 'INNERTEXT':
-                rvalue += eval(rule);
+            case 'OUTERTEXT':
+                rvalue += a[rule];
                 break;
 
-            case 'templateinvoc':
-                rvalue += printTInvoc(eval(rule));
+            case 'templateinvocation':
+                rvalue += printTInvoc(a[rule]);
                 break;
 
             case 'templatedef':
-                rvalue += printTDef(eval(rule));
+                rvalue += printTDef(a[rule]);
                 break;
 
             case 'next':
-                rvalue += printOuter(eval(rule));
+                rvalue += printOuter(a[rule]);
         }
     }
     return rvalue;
@@ -507,16 +507,16 @@ function printOuter(a){
 function printTInvoc(a){
     var rvalue = "";
     for (var rule in a) {
-        if (!eval(rule)) {
+        if (!a[rule]) {
             continue;       //property is null, next property
         }
         switch (rule) {
             case 'itext':
-                rvalue += printIText(eval(rule));
+                rvalue += printIText(a[rule]);
                 break;
 
             case 'targs':
-                rvalue += printTArgs(eval(rule));
+                rvalue += printTArgs(a[rule]);
                 break;
         }
     }
@@ -525,16 +525,16 @@ function printTInvoc(a){
 function printTDef(a){
     var rvalue = "";
     for (var rule in a) {
-        if (!eval(rule)) {
+        if (!a[rule]) {
             continue;       //property is null, next property
         }
         switch (rule) {
             case 'dtext':
-                rvalue += printDText(eval(rule));
+                rvalue += printDText(a[rule]);
                 break;
 
             case 'dargs':
-                rvalue += printDArgs(eval(rule));
+                rvalue += printDArgs(a[rule]);
                 break;
 
         }
@@ -545,28 +545,28 @@ function printTDef(a){
 function printDText(a){
     var rvalue = "";
     for (var rule in a) {
-        if (!eval(rule)) {
+        if (!a[rule]) {
             continue;       //property is null, next property
         }
         switch (rule) {
             case 'INNERDTEXT':
-                rvalue += eval(rule);
+                rvalue += a[rule];
                 break;
 
             case 'templateinvocation':
-                rvalue += printTInvoc(eval(rule));
+                rvalue += printTInvoc(a[rule]);
                 break;
 
             case 'templatedef':
-                rvalue += printTDef(eval(rule));
+                rvalue += printTDef(a[rule]);
                 break;
 
             case 'tparam':
-                rvalue += printTParam(eval(rule));
+                rvalue += printTParam(a[rule]);
                 break;
 
             case 'next':
-                rvalue += printDText(eval(rule));
+                rvalue += printDText(a[rule]);
                 break;
         }
     }
@@ -577,16 +577,16 @@ function printDArgs(a){
 
     var rvalue = "";
     for (var rule in a) {
-        if (!eval(rule)) {
+        if (!a[rule]) {
             continue;       //property is null, next property
         }
         switch (rule) {
             case 'dtext':
-                rvalue += printDText(eval(rule));
+                rvalue += printDText(a[rule]);
                 break;
 
             case 'next':
-                rvalue += printDArgs(eval(rule));
+                rvalue += printDArgs(a[rule]);
                 break;
 
         }
@@ -597,43 +597,43 @@ function printDArgs(a){
 function printIText(a){
     var rvalue = "";
     for(var rule in a){
-        if(!eval(rule)){
+        if(!a[rule]){
             continue;       //property is null, next property
         }
         switch(rule){
             case 'INNERTEXT':
-                rvalue+=eval(rule);
+                rvalue+=a[rule];
                 break;
 
             case 'templateinvocation':
-                rvalue+= printTInvoc(eval(rule));
+                rvalue+= printTInvoc(a[rule]);
                 break;
 
             case 'templatedef':
-                rvalue+= printTDef(eval(rule));
+                rvalue+= printTDef(a[rule]);
                 break;
 
             case 'tparam':
-                rvalue+= printTParam(eval(rule));
+                rvalue+= printTParam(a[rule]);
                 break;
 
             case 'next':
-                rvalue+= printIText(eval(rule));
+                rvalue+= printIText(a[rule]);
                 break;
         }
     }
-    return "?"+rvalue;
+    return rvalue;
 }
 
 function printTParam(a){
     var rvalue = "";
     for(var rule in a){
-        if(!eval(rule)){
+        if(!a[rule]){
             continue;       //property is null, next property
         }
         switch(rule){
             case 'PNAME':
-                rvalue+=eval(rule);
+                rvalue+=a[rule];
                 break;
         }
     }
@@ -643,16 +643,16 @@ function printTParam(a){
 function printTArgs(a){
     var rvalue = "";
     for(var rule in a){
-        if(!eval(rule)){
+        if(!a[rule]){
             continue;       //property is null, next property
         }
         switch(rule){
             case 'itext':
-                rvalue+=printIText(rule);
+                rvalue+=printIText(a[rule]);
                 break;
 
             case 'next':
-                rvalue+=printTArgs(rule);
+                rvalue+=printTArgs(a[rule]);
                 break;
         }
     }
