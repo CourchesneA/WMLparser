@@ -3,6 +3,17 @@
 * COMP302 ast 2
 * october 2016
 */
+
+/*
+PROGRAM DEDSCRIPTION
+
+This program is the tester, the file I used for testing, then split up in q1.js,q2.js...
+I include it if there is something wrong in the correction.
+
+*/
+
+
+
 //---------------Question 1----------------
 //
 //I will use Regex object for recognizing the tokens
