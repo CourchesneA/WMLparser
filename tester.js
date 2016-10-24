@@ -134,8 +134,6 @@ function parseOuter(s){
 
 }
 
-
-
 function parseTemplateInvocation(s){
     // return template invocation ADT
     //<templateinvocation> ::= TSTART <itext> <targs> TEND
@@ -428,9 +426,9 @@ function parse(s){
     return parseOuter(consume);
 }
 
-<<<<<<< HEAD
+//<<<<<<< HEAD
 var teststr = "outer 1 {{ invoc2 | param2 }} outer2";
-=======
+//=======
 //helper
 function printASTIndent(node, tabVal){
 	if(typeof tabVal === 'undefined'){
@@ -460,10 +458,14 @@ function printASTIndent(node, tabVal){
 
 
 //var teststr = "outer 1 {{invoc {{ invoc2 | param2 }}| param }} outer2";
-var teststr = "{:definition|arg1 {{{you}}} :}";
->>>>>>> cee6dc78f8c96736655e0d2c876a712a93f6aa69
+//var teststr = "{:definition|arg1 {{{you}}} :}";
+//>>>>>>> cee6dc78f8c96736655e0d2c876a712a93f6aa69
+var teststr = "outer 1 {{ invoc2 | param2 }} outer 2"
 var done = parse(teststr);
-console.log(printASTIndent(done, 4));
+console.log(done);
+console.log("Print after this");
+console.log(printAST(done));
+//console.log(printASTIndent(done, 4));
 
 
 //TODO investigate line feed and trim
@@ -476,82 +478,121 @@ function printAST(a){
 
 function printOuter(a){
     var rvalue = "";
-    for(var rule in a){
-        if(!eval(rule)){
+    for (var rule in a) {
+        if (!eval(rule)) {
             continue;       //property is null, next property
         }
-        switch(rule){
+        switch (rule) {
             case 'INNERTEXT':
-                rvalue+=eval(rule);
+                rvalue += eval(rule);
                 break;
 
             case 'templateinvoc':
-                rvalue+=printTInvoc(rule);
+                rvalue += printTInvoc(eval(rule));
                 break;
 
             case 'templatedef':
-                rvalue+=printTDef(rule);
+                rvalue += printTDef(eval(rule));
                 break;
 
             case 'next':
-                rvalue+=printOuter(rule);
+                rvalue += printOuter(eval(rule));
         }
     }
     return rvalue;
 }
 
 function printTInvoc(a){
-     var rvalue = "";
-    for(var rule in a){
-        if(!eval(rule)){
+    var rvalue = "";
+    for (var rule in a) {
+        if (!eval(rule)) {
             continue;       //property is null, next property
         }
-        switch(rule){
+        switch (rule) {
             case 'itext':
-                rvalue+=printIText(rule);
+                rvalue += printIText(eval(rule));
                 break;
 
             case 'targs':
-                rvalue+=printTArgs(rule);
+                rvalue += printTArgs(eval(rule));
                 break;
         }
     }
-    return "{{"+rvalue+"}}";
+    return "{{" + rvalue + "}}";
 }
 function printTDef(a){
-     var rvalue = "";
-    for(var rule in a){
-        if(!eval(rule)){
+    var rvalue = "";
+    for (var rule in a) {
+        if (!eval(rule)) {
             continue;       //property is null, next property
         }
-        switch(rule){
-            case 'INNERTEXT':
-                rvalue+=eval(rule);
+        switch (rule) {
+            case 'dtext':
+                rvalue += printDText(eval(rule));
                 break;
 
-            case 'templateinvoc':
-                rvalue+=printTInvoc(rule);
+            case 'dargs':
+                rvalue += printDArgs(eval(rule));
+                break;
+
+        }
+    }
+    return "{:"+rvalue+":}";
+}
+
+function printDText(a){
+    var rvalue = "";
+    for (var rule in a) {
+        if (!eval(rule)) {
+            continue;       //property is null, next property
+        }
+        switch (rule) {
+            case 'INNERDTEXT':
+                rvalue += eval(rule);
+                break;
+
+            case 'templateinvocation':
+                rvalue += printTInvoc(eval(rule));
                 break;
 
             case 'templatedef':
-                rvalue+=printTDef(rule);
+                rvalue += printTDef(eval(rule));
+                break;
+
+            case 'tparam':
+                rvalue += printTParam(eval(rule));
                 break;
 
             case 'next':
-                rvalue+=printOuter(rule);
+                rvalue += printDText(eval(rule));
+                break;
         }
     }
     return rvalue;
 }
 
-function printIText(a){
- name : "itext",
-        INNERTEXT : null,
-        templateinvocation : null,
-        templatedef : null,
-        tparam : null,
-        next : null
+function printDArgs(a){
 
+    var rvalue = "";
+    for (var rule in a) {
+        if (!eval(rule)) {
+            continue;       //property is null, next property
+        }
+        switch (rule) {
+            case 'dtext':
+                rvalue += printDText(eval(rule));
+                break;
+
+            case 'next':
+                rvalue += printDArgs(eval(rule));
+                break;
+
+        }
+    }
+    return "|" + rvalue;
+}
+
+function printIText(a){
     var rvalue = "";
     for(var rule in a){
         if(!eval(rule)){
@@ -563,19 +604,19 @@ function printIText(a){
                 break;
 
             case 'templateinvocation':
-                rvalue+= printTInvoc(rule);
+                rvalue+= printTInvoc(eval(rule));
                 break;
 
             case 'templatedef':
-                rvalue+= printTDef(rule);
+                rvalue+= printTDef(eval(rule));
                 break;
 
             case 'tparam':
-                rvalue+= printTParam(rule);
+                rvalue+= printTParam(eval(rule));
                 break;
 
             case 'next':
-                rvalue+= printIText(rule);
+                rvalue+= printIText(eval(rule));
                 break;
         }
     }
@@ -583,7 +624,18 @@ function printIText(a){
 }
 
 function printTParam(a){
-    
+    var rvalue = "";
+    for(var rule in a){
+        if(!eval(rule)){
+            continue;       //property is null, next property
+        }
+        switch(rule){
+            case 'PNAME':
+                rvalue+=eval(rule);
+                break;
+        }
+    }
+    return "{{{"+rvalue+"}}}";
 }
 
 function printTArgs(a){
