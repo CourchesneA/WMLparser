@@ -78,18 +78,6 @@ var testset = {
     str5 : "{:factorial | n | {{#ifeq | {{{n}}} | 0 | 1 | {{times | {{{n }}} | {{factorial | {{#expr | {{{n}}} -1 }} }} }} }} :}"
 }
 
-/*function tester(testset){
-    for (var s in testset){
-        var p = eval(s);
-        if(p == scanit(s, TOKENSET)){
-            console.log("true");
-        }else{
-            console.log("false");
-        }
-    }
-}
-console.log(tester(testset));*/
-//console.log(scanit(str));
 
 //----------Question 3---------------
 
@@ -185,11 +173,57 @@ function parseTemplateInvocation(s){
 }
 
 function parseTemplateDef(s){
+    //Similar to templateinvocation
+     var Inset = {
+        PSTART : true,
+        TSTART : true,
+        DSTART : true,
+        PIPE : true,
+        DEND : true,
+        INNERDTEXT : true,
+    }
+
+    if (!s.str){        //Check for end of string
+        return null;
+    }
+    var rvalue = {
+        name : "templatedef",
+        dtext : null,
+        dargs : null
+    }
+
+    //Since we assume not empty and legal syntax, first part will be itext up to PIPE or DEND
+    var ans = parseDText(s);
+
+    rvalue.dtext = ans.node;
+    //var nextToken = ans.nextToken;      //last token get from the string, Should be TEND or PIPE
+    switch(ans.nextToken){
+        case "DEND":
+            break;
+        case "PIPE":
+            rvalue.dargs = parseDArgs(s);
+            break;
+    }
+    return rvalue;
 
 }
 
 function parseTParam(s){
+     if (!s.str){        //Check for end of string
+        return null;
+    }
+    var rvalue = {
+        name : "tparam",
+        PNAME : null
+    }
+    var tset = {
+        PNAME : true
+    }
 
+    var t = removeToken(s,tset);
+    rvalue.PNAME = t.tokenvalue;
+    removeToken(s, {PEND : true});      //remove the token PEND since it will not be usefull (No error checking, expecting good input)
+    return rvalue;
 }
 
 function parseIText(s){
@@ -227,7 +261,6 @@ function parseIText(s){
             rvalue.templateinvocation = parseTemplateInvocation(s);
             break;
 
-
         case "DSTART":
             rvalue.templatedef = parseTemplateDef(s);
             break;
@@ -262,11 +295,77 @@ function parseIText(s){
     }
 }
 
-function parseTArgs(s){
-     var TASet = {
-       
+function parseDText(s){
+    var InDset = {
+        PSTART: true,
+        TSTART: true,
+        DSTART: true,
+        PIPE: true,
+        DEND: true,
+        INNERDTEXT: true
     }
 
+    if (!s.str) {        //Check for end of string
+        return null;
+    }
+    var rvalue = {
+        name: "dtext",
+        INNERDTEXT: null,
+        templateinvocation: null,
+        templatedef: null,
+        tparam: null,
+        next: null
+    }
+
+    var t = null;
+    t = removeToken(s, InDset);
+
+    switch (t.token) {
+
+        case "INNERDTEXT":             //Set itext INNERTEXT and parse next itext
+            rvalue.INNERDTEXT = t.tokenvalue;
+            break;
+
+        case "TSTART":
+            rvalue.templateinvocation = parseTemplateInvocation(s);
+            break;
+
+        case "DSTART":
+            rvalue.templatedef = parseTemplateDef(s);
+            break;
+
+        case "PSTART":
+            rvalue.tparam = parseTParam(s);
+            break;
+
+        case "PIPE":
+            return {
+                node: null,
+                nextToken: t.token
+            }
+
+        case "DEND":
+            return {
+                node: null,
+                nextToken: t.token
+            }
+
+    }
+    var ans = parseDText(s);    //parse the next itext
+    var nextToken = null;
+    if (ans.nextToken == "PIPE" || ans.nextToken == "DEND") {
+        nextToken = ans.nextToken
+    }
+    rvalue.next = ans.node;
+
+    return {
+        node: rvalue,
+        nextToken: nextToken     //should be either PIPE or TEND
+    }
+}
+
+function parseTArgs(s){
+     
     if (!s.str){        //Check for end of string
         return null;
     }
@@ -281,11 +380,37 @@ function parseTArgs(s){
     
     rvalue.itext = ans.node;
     var t = ans.nextToken;      //last token get from the string, Should be TEND or PIPE
-    switch(t.tokenvalue){
+    switch(ans.nextToken){
         case "TEND":
             break;
         case "PIPE":
             rvalue.next = parseTArgs(s);
+            break;
+    }
+    return rvalue;
+}
+
+function parseDArgs(s){
+
+    if (!s.str){        //Check for end of string
+        return null;
+    }
+    var rvalue = {
+        name : "dargs",
+        dtext : null,
+        next : null
+    }
+
+    //Since we assume not empty and legal syntax, first part will be itext up to PIPE or TEND
+    var ans = parseDText(s);
+    
+    rvalue.dtext = ans.node;
+    var t = ans.nextToken;      //last token get from the string, Should be TEND or PIPE
+    switch(ans.nextToken){
+        case "TEND":
+            break;
+        case "PIPE":
+            rvalue.next = parseDArgs(s);
             break;
     }
     return rvalue;
@@ -303,10 +428,45 @@ function parse(s){
     return parseOuter(consume);
 }
 
+<<<<<<< HEAD
 var teststr = "outer 1 {{ invoc2 | param2 }} outer2";
-var done = parse(teststr);
-console.log(done);
+=======
+//helper
+function printASTIndent(node, tabVal){
+	if(typeof tabVal === 'undefined'){
+		tabVal = 0;
+	}
+	var tabs = "";
+	for(var i = 0; i < tabVal; i++){
+		tabs= tabs.concat("	");
+	}
+	var result = "";
+	for(var param in node){
+		if (node.hasOwnProperty(param)){
+			var curNode;
+			if(typeof node[param] === 'object' && node[param] !== null){
+				curNode ='\n' + printASTIndent(node[param], tabVal+1);
+				result +=tabs + param +":" + curNode;
 
+			}
+			else{
+				curNode = node[param];
+				result +=tabs + param +":" + curNode + '\n';
+			}
+		}
+	}
+	return result;
+}
+
+
+//var teststr = "outer 1 {{invoc {{ invoc2 | param2 }}| param }} outer2";
+var teststr = "{:definition|arg1 {{{you}}} :}";
+>>>>>>> cee6dc78f8c96736655e0d2c876a712a93f6aa69
+var done = parse(teststr);
+console.log(printASTIndent(done, 4));
+
+
+//TODO investigate line feed and trim
 
 //-----------------Question 4---------------------
 
