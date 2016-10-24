@@ -473,11 +473,13 @@ console.log(printAST(done));
 //-----------------Question 4---------------------
 
 function printAST(a){
+    console.log("test1");
     return printOuter(a);
 }
 
 function printOuter(a){
     var rvalue = "";
+    console.log("test2");
     for (var rule in a) {
         if (!eval(rule)) {
             continue;       //property is null, next property
