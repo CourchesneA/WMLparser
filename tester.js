@@ -471,7 +471,7 @@ function printASTIndent(node, tabVal){
 //var teststr = "outer 1 {{invoc {{ invoc2 | param2 }}| param }} outer2";
 //var teststr = "{:definition|arg1 {{{you}}} :}";
 //>>>>>>> cee6dc78f8c96736655e0d2c876a712a93f6aa69
-var teststr = "{{invocation||||||}}"
+var teststr = "{:definition| \n body :}"
 var done = parse(teststr);
 //console.log(done);
 console.log("Print after this");
